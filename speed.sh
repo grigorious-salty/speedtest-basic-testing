@@ -95,6 +95,16 @@ while true; do
     fi
 done
 
+# Calculate the total expected duration
+total_duration=$((num_tests * sleep_time))
+
+# Convert the total duration to minutes and seconds
+minutes=$((total_duration / 60))
+seconds=$((total_duration % 60))
+
+# Print the total expected duration
+echo -e "\e[1mTotal expected duration:\e[0m $minutes minutes $seconds seconds"
+
 # Initialize the output directory with a dummy value
 output_directory="dummy"
 
@@ -109,7 +119,7 @@ if [[ "$output_directory" == "dummy" ]]; then
 fi
 
 # Use the custom output directory if provided
-output_directory="${output_directory:-.}"
+output_directory="${output_directory}"
 
 # Initialize variables to store the total download and upload speeds
 total_download=0
@@ -123,7 +133,7 @@ errors_filename="$output_directory/speedtest_errors.csv"
 # Check if the results CSV file exists
 if [ ! -f "$results_filename" ]; then
     # Initialize the results CSV file with column headers
-    echo "Average Download, Average Upload, Timestamp" > "$results_filename"
+    echo "Average Download mb/s, Average Upload mb/s, Timestamp" > "$results_filename"
 fi
 
 # Check if the errors CSV file exists
@@ -167,8 +177,6 @@ for i in $(seq 1 $num_tests); do
     # Add the current download and upload speeds to the total
     total_download=$(echo "$total_download + $download" | bc -l)
     total_upload=$(echo "$total_upload + $upload" | bc -l)
-    #echo "AAAAAAAAAAA $total_download, $total_upload, AAAAAAAAA"
-
 
     # Sleep for the specified time before running the next test
     sleep $sleep_time
@@ -183,9 +191,8 @@ average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc)
 
 
 # Print the results
-echo ""
-echo "Average download speed: $average_download mb/s"
-echo "Average upload speed: $average_upload mb/s"
-echo ""
-echo "Results appended to $results_filename"
-echo "Error logs appended to $errors_filename"
+echo
+echo -e "\e[1mAverage download speed:\e[0m \e[32m$average_download mb/s\e[0m"
+echo -e "\e[1mAverage upload speed:\e[0m \e[32m$average_upload mb/s\e[0m\n"
+echo -e "\e[1mResults appended to:\e[0m \e[36m$results_filename\e[0m"
+echo -e "\e[1mError logs appended to:\e[0m \e[36m$errors_filename\e[0m"
