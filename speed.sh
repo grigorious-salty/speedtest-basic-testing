@@ -19,6 +19,9 @@ validate_sleep_time() {
     return 0
 }
 
+total_download=0
+total_upload=0
+
 # Check if speedtest-cli is installed
 if ! command -v speedtest-cli &> /dev/null; then
     echo "speedtest-cli is not installed. Installing..."
@@ -121,7 +124,7 @@ fi
 # Loop for the specified number of tests
 for i in $(seq 1 $num_tests); do
     # Run the speed test and store the output in a variable
-    output=$(speedtest-cli --bytes)
+    output=$(speedtest-cli --bytes --secure 2>&1)
 
     # Check if speedtest-cli encountered an error
     if [ $? -ne 0 ]; then
@@ -146,12 +149,15 @@ for i in $(seq 1 $num_tests); do
     fi
 
     # Extract the download and upload speeds from the output
-    download=$(echo $output | grep Download | awk '{print $2}')
-    upload=$(echo $output | grep Upload | awk '{print $2}')
+    #download=$(echo $output | grep Download | awk '{print $2}')
+    download=$(echo "$output" | awk '/Download:/ {print $2}' )
+    upload=$(echo "$output" | awk '/Upload:/ {print $2}' )
 
     # Add the current download and upload speeds to the total
-    total_download=$((total_download + download))
-    total_upload=$((total_upload + upload))
+    total_download=$(echo "$total_download + $download" | bc -l)
+    total_upload=$(echo "$total_upload + $upload" | bc -l)
+    #echo "AAAAAAAAAAA $total_download, $total_upload, AAAAAAAAA"
+
 
     # Sleep for the specified time before running the next test
     sleep $sleep_time
@@ -161,12 +167,14 @@ for i in $(seq 1 $num_tests); do
 done
 
 # Calculate the average download and upload speeds
-average_download=$((total_download / num_tests))
-average_upload=$((total_upload / num_tests))
+average_download=$(echo "scale=2; $total_download / $num_tests" | bc) 
+average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc) 
+
 
 # Print the results
-echo "Average download speed: $average_download"
-echo "Average upload speed: $average_upload"
-
+echo ""
+echo "Average download speed: $average_download mb/s"
+echo "Average upload speed: $average_upload mb/s"
+echo ""
 echo "Results appended to $results_filename"
 echo "Error logs appended to $errors_filename"
