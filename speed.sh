@@ -47,40 +47,41 @@ fi
 
 current_time=$(date +%s)
 
-read -p "When do you want to execute the script? [Now/Delay/Specific]: " execution_choice
+read -p "\033[37mWhen do you want to execute the script? [Now/Delay/Specific]: \033[0m" execution_choice
+execution_choice=$(echo "$execution_choice" | tr '[:upper:]' '[:lower:]')
 
-if [[ $execution_choice == "Now" ]]; then
+if [[ $execution_choice == "now" ]]; then
     # Execute the script immediately
-    echo "Executing the script now..."
+    echo -e "\033[92mExecuting the script now...\033[0m"
 
-elif [[ $execution_choice == "Delay" ]]; then
-    read -p "Enter the delay in seconds: " delay
+elif [[ $execution_choice == "delay" ]]; then
+    read -p "\033[37mEnter the delay in seconds: \033[0m" delay
     execute_time=$((current_time + delay))
-    echo "Executing the script after $delay seconds..."
+    echo "\033[92mExecuting the script after $delay seconds...\033[0m"
     sleep $delay
 
-elif [[ $execution_choice == "Specific" ]]; then
-    read -p "Enter the specific time in HH:MM format: " specific_time
+elif [[ $execution_choice == "specific" ]]; then
+    read -p "\033[37mEnter the specific time in HH:MM format: \033[0m" specific_time
     specific_time_seconds=$(date -d "$specific_time" +%s)
     
     if [[ $specific_time_seconds -gt $current_time ]]; then
         sleep_duration=$((specific_time_seconds - current_time))
-        echo "Executing the script at $specific_time..."
+        echo "\033[92mExecuting the script at $specific_time...\033[0m"
         sleep $sleep_duration
     else
-        echo "Invalid time. Please provide a future time."
+        echo "\033[31mInvalid time. Please provide a future time.\033[0m"
         exit 1
     fi
 
 else
-    echo "Invalid choice. Exiting."
+    echo -e "\033[31mInvalid choice. Exiting.\033[0m"
     exit 1
 fi
 
 
 # Prompt the user to input the number of tests
 while true; do
-    read -p "Enter the number of tests: " num_tests
+    read -p "\033[37mEnter the number of tests: \033[0m" num_tests
     if validate_number "$num_tests"; then
         break
     fi
