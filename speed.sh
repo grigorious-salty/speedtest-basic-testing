@@ -42,6 +42,39 @@ if ! command -v speedtest-cli &> /dev/null; then
     echo "speedtest-cli has been installed successfully."
 fi
 
+current_time=$(date +%s)
+
+read -p "When do you want to execute the script? [Now/Delay/Specific]: " execution_choice
+
+if [[ $execution_choice == "Now" ]]; then
+    # Execute the script immediately
+    echo "Executing the script now..."
+
+elif [[ $execution_choice == "Delay" ]]; then
+    read -p "Enter the delay in seconds: " delay
+    execute_time=$((current_time + delay))
+    echo "Executing the script after $delay seconds..."
+    sleep $delay
+
+elif [[ $execution_choice == "Specific" ]]; then
+    read -p "Enter the specific time in HH:MM format: " specific_time
+    specific_time_seconds=$(date -d "$specific_time" +%s)
+    
+    if [[ $specific_time_seconds -gt $current_time ]]; then
+        sleep_duration=$((specific_time_seconds - current_time))
+        echo "Executing the script at $specific_time..."
+        sleep $sleep_duration
+    else
+        echo "Invalid time. Please provide a future time."
+        exit 1
+    fi
+
+else
+    echo "Invalid choice. Exiting."
+    exit 1
+fi
+
+
 # Prompt the user to input the number of tests
 while true; do
     read -p "Enter the number of tests: " num_tests
