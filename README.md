@@ -9,3 +9,6 @@ Future options:
 - option to pick the network interface we need to test, in case of multiple network cards or wifi cards
 - notifications in case of greatly irregular results
 - scheduled runs perhaps with cron jobs
+
+
+Tested on a 2006 IBM Z61 :) 
