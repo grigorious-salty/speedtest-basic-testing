@@ -89,16 +89,26 @@ done
 
 # Prompt the user to input the sleep time between tests
 while true; do
-    read -p "Enter the sleep time between tests (in seconds): " sleep_time
+    read -p "\033[37mEnter the sleep time between tests (in seconds): \033[0m" sleep_time
     if validate_number "$sleep_time" && validate_sleep_time "$sleep_time"; then
         break
     fi
 done
 
-# Prompt the user to input the custom output directory
-read -p "Enter the custom output directory path (default: current directory): " output_directory
+# Initialize the output directory with a dummy value
+output_directory="dummy"
 
-# Use the custom output directory if provided, otherwise use the current directory
+# Prompt the user to input the custom output directory
+read -p "\033[37mEnter the custom output directory path (default: current directory): \033[0m" output_directory
+
+# Check if the output directory is still the initial dummy value
+if [[ "$output_directory" == "dummy" ]]; then
+  # Set the output directory to the current directory
+  output_directory="$(pwd)"
+  echo "Using current directory: $output_directory"
+fi
+
+# Use the custom output directory if provided
 output_directory="${output_directory:-.}"
 
 # Initialize variables to store the total download and upload speeds
