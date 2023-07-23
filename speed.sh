@@ -39,6 +39,12 @@ validate_directory() {
 
     return 0
 }
+
+# Function to install Homebrew on macOS
+install_homebrew() {
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+}
+
 #############################################################################
 ####################### START OF VARIABLES SECTION ##########################
 
@@ -53,33 +59,68 @@ total_upload=0
 ##################### SPEEDTEST-CLI CHECK SECTION ###########################
 
 
-# Check if speedtest-cli is installed
+    # Check if speedtest-cli is installed
 if ! command -v speedtest-cli &> /dev/null; then
-    echo "speedtest-cli is not installed. Installing..."
-    
-    # Install speedtest-cli
-    if command -v apt-get &> /dev/null; then
-        if ! sudo apt-get install speedtest-cli; then
-            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
+        echo "speedtest-cli is not installed. Installing..."
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then  
+        # Install speedtest-cli
+        if command -v apt-get &> /dev/null; then
+            if ! sudo apt-get install speedtest-cli; then
+                printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
+                exit 1
+            fi
+        elif command -v dnf &> /dev/null; then
+            if ! sudo dnf install speedtest-cli; then
+                printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
+                exit 1
+            fi
+        elif command -v pacman &> /dev/null; then
+            if ! sudo pacman -S speedtest-cli; then
+                printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
+                exit 1
+            fi    
+        else
+            printf "\e[91ERROR: Unable to install speedtest-cli. Please install it manually.\e[0m"
             exit 1
         fi
-    elif command -v dnf &> /dev/null; then
-        if ! sudo dnf install speedtest-cli; then
-            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
-            exit 1
-        fi
-    elif command -v pacman &> /dev/null; then
-        if ! sudo pacman -S speedtest-cli; then
-            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
-            exit 1
-        fi    
-    else
-        printf "\e[91ERROR: Unable to install speedtest-cli. Please install it manually.\e[0m"
-        exit 1
-    fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        if command -v brew &> /dev/null; then
+            if ! brew install speedtest-cli; then
+                echo "ERROR: Failed to install speedtest-cli. Please install it manually."
+                exit 1
+            fi
+        else
+            echo "Homebrew is required to install speedtest-cli on macOS."
 
-    printf "\e[92mspeedtest-cli has been installed successfully.\e[0m\n"
+            # Prompt the user if they want to install Homebrew
+            read -p "Do you want to install Homebrew? [y/n]: " choice
+            if [[ $choice =~ ^[Yy]$ ]]; then
+                install_homebrew
+                if ! command -v brew &> /dev/null; then
+                    echo "ERROR: Failed to install Homebrew. Please install it manually."
+                    exit 1
+                fi
+
+                # Homebrew installed successfully, now install speedtest-cli
+                if ! brew install speedtest-cli; then
+                    echo "ERROR: Failed to install speedtest-cli. Please install it manually."
+                    exit 1
+                fi
+            else
+                echo "Aborted installation. Please install Homebrew and speedtest-cli manually."
+                exit 1
+            fi
+        fi
+    else
+       echo "ERROR: Unable to determine the operating system. Please install speedtest-cli manually."
+        exit 1
+    fi   
+        printf "\e[92mspeedtest-cli has been installed successfully.\e[0m\n"
 fi
+
+
+
+
 
 #############################################################################
 ############################## TIME OF EXECUTION ############################
