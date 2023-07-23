@@ -242,7 +242,7 @@ average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc)
 
 # Print the results
 echo
-printf "\e[1mAverage download speed:\e[0m \e[32m$average_download mb/s\e[0m"
+printf "\e[1mAverage download speed:\e[0m \e[32m$average_download mb/s\e[0m\n"
 printf "\e[1mAverage upload speed:\e[0m \e[32m$average_upload mb/s\e[0m\n"
-printf "\e[1mResults appended to:\e[0m \e[36m$results_filename\e[0m"
-printf "\e[1mError logs appended to:\e[0m \e[36m$errors_filename\e[0m"
+printf "\e[1mResults appended to:\e[0m \e[36m$results_filename\e[0m\n"
+printf "\e[1mError logs appended to:\e[0m \e[36m$errors_filename\e[0m\n"
