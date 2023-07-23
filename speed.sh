@@ -4,7 +4,7 @@
 validate_number() {
     re='^[0-9]+$'
     if ! [[ $1 =~ $re ]]; then
-        echo "Invalid input. Please enter a valid number."
+        printf "\e[91mInvalid input. Please enter a valid number.\e[0m"
         return 1
     fi
     return 0
@@ -13,7 +13,7 @@ validate_number() {
 # Function to validate if sleep time is within range
 validate_sleep_time() {
     if (( $1 < 15 || $1 > 120 )); then
-        echo "Invalid input. Please enter a number between 15 and 120."
+        printf "\e[91mInvalid input. Please enter a number between 15 and 120.\e[0m"
         return 1
     fi
     return 0
@@ -26,62 +26,72 @@ total_upload=0
 if ! command -v speedtest-cli &> /dev/null; then
     echo "speedtest-cli is not installed. Installing..."
     
+#    # Use sudo once to acquire necessary privileges for package manager commands
+#    if ! sudo true; then
+#        echo "ERROR: Unable to get superuser privileges. Please install speedtest-cli manually with appropriate permissions."
+#        exit 1
+#    fi
     # Install speedtest-cli
     if command -v apt-get &> /dev/null; then
         if ! sudo apt-get install speedtest-cli; then
-            echo "ERROR: Failed to install speedtest-cli. Please install it manually."
+            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
             exit 1
         fi
     elif command -v dnf &> /dev/null; then
         if ! sudo dnf install speedtest-cli; then
-            echo "ERROR: Failed to install speedtest-cli. Please install it manually."
+            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
             exit 1
         fi
+    elif command -v pacman &> /dev/null; then
+        if ! sudo pacman -S speedtest-cli; then
+            printf "\e[91ERROR: Failed to install speedtest-cli. Please install it manually.\e[0m"
+            exit 1
+        fi    
     else
-        echo "ERROR: Unable to install speedtest-cli. Please install it manually."
+        printf "\e[91ERROR: Unable to install speedtest-cli. Please install it manually.\e[0m"
         exit 1
     fi
 
-    echo "speedtest-cli has been installed successfully."
+    printf "\e[92mspeedtest-cli has been installed successfully.\e[0m\n"
 fi
 
 current_time=$(date +%s)
 
-read -p "\033[37mWhen do you want to execute the script? [Now/Delay/Specific]: \033[0m" execution_choice
+read -p $'\033[37mWhen do you want to execute the script? [Now/Delay/Specific]: \033[0m' execution_choice
 execution_choice=$(echo "$execution_choice" | tr '[:upper:]' '[:lower:]')
 
 if [[ $execution_choice == "now" ]]; then
     # Execute the script immediately
-    echo -e "\033[92mExecuting the script now...\033[0m"
+    printf "\e[92mExecuting the script now...\e[0m\n"
 
 elif [[ $execution_choice == "delay" ]]; then
-    read -p "\033[37mEnter the delay in seconds: \033[0m" delay
+    read -p $'\033[37mEnter the delay in seconds: \033[0m' delay
     execute_time=$((current_time + delay))
-    echo "\033[92mExecuting the script after $delay seconds...\033[0m"
+    printf "\033[92mExecuting the script after $delay seconds...\e[0m\n"
     sleep $delay
 
 elif [[ $execution_choice == "specific" ]]; then
-    read -p "\033[37mEnter the specific time in HH:MM format: \033[0m" specific_time
+    read -p $'\033[37mEnter the specific time in HH:MM format: \033[0m' specific_time
     specific_time_seconds=$(date -d "$specific_time" +%s)
     
     if [[ $specific_time_seconds -gt $current_time ]]; then
         sleep_duration=$((specific_time_seconds - current_time))
-        echo "\033[92mExecuting the script at $specific_time...\033[0m"
+        printf "\033[92mExecuting the script at $specific_time...\e[0m\n"
         sleep $sleep_duration
     else
-        echo "\033[31mInvalid time. Please provide a future time.\033[0m"
+        printf "\033[31mInvalid time. Please provide a future time.\e[0m\n"
         exit 1
     fi
 
 else
-    echo -e "\033[31mInvalid choice. Exiting.\033[0m"
+    printf "\033[31mInvalid choice. Exiting.\e[0m\n"
     exit 1
 fi
 
 
 # Prompt the user to input the number of tests
 while true; do
-    read -p "\033[37mEnter the number of tests: \033[0m" num_tests
+    read -p $'\033[37mEnter the number of tests: \033[0m' num_tests
     if validate_number "$num_tests"; then
         break
     fi
@@ -89,7 +99,7 @@ done
 
 # Prompt the user to input the sleep time between tests
 while true; do
-    read -p "\033[37mEnter the sleep time between tests (in seconds): \033[0m" sleep_time
+    read -p $'\033[37mEnter the sleep time between tests (in seconds): \033[0m' sleep_time
     if validate_number "$sleep_time" && validate_sleep_time "$sleep_time"; then
         break
     fi
@@ -103,19 +113,26 @@ minutes=$((total_duration / 60))
 seconds=$((total_duration % 60))
 
 # Print the total expected duration
-echo -e "\e[1mTotal expected duration:\e[0m $minutes minutes $seconds seconds"
+printf "\e[1mTotal expected duration: $minutes minutes $seconds seconds \e[0m"
 
 # Initialize the output directory with a dummy value
 output_directory="dummy"
 
 # Prompt the user to input the custom output directory
-read -p "\033[37mEnter the custom output directory path (default: current directory): \033[0m" output_directory
+read -p $'\033[37mEnter the custom output directory path (default: new directory): \033[0m' output_directory
 
 # Check if the output directory is still the initial dummy value
 if [[ "$output_directory" == "dummy" ]]; then
-  # Set the output directory to the current directory
-  output_directory="$(pwd)"
-  echo "Using current directory: $output_directory"
+    # Set the output directory to a new directory named "results"
+    output_directory="$(pwd)/results"
+
+    # Create the "results" directory if it doesn't exist
+    if [ ! -d "$output_directory" ]; then
+        mkdir -p "$output_directory"
+        
+    fi
+    chmod 777 "$output_directory"
+    echo "Using output directory: $output_directory"
 fi
 
 # Use the custom output directory if provided
@@ -192,7 +209,7 @@ average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc)
 
 # Print the results
 echo
-echo -e "\e[1mAverage download speed:\e[0m \e[32m$average_download mb/s\e[0m"
-echo -e "\e[1mAverage upload speed:\e[0m \e[32m$average_upload mb/s\e[0m\n"
-echo -e "\e[1mResults appended to:\e[0m \e[36m$results_filename\e[0m"
-echo -e "\e[1mError logs appended to:\e[0m \e[36m$errors_filename\e[0m"
+printf "\e[1mAverage download speed:\e[0m \e[32m$average_download mb/s\e[0m"
+printf "\e[1mAverage upload speed:\e[0m \e[32m$average_upload mb/s\e[0m\n"
+printf "\e[1mResults appended to:\e[0m \e[36m$results_filename\e[0m"
+printf "\e[1mError logs appended to:\e[0m \e[36m$errors_filename\e[0m"
