@@ -83,13 +83,22 @@ if [[ $execution_choice == "now" ]]; then
     printf "\e[92mExecuting the script now...\e[0m\n"
 
 elif [[ $execution_choice == "delay" ]]; then
-    read -p $'\033[37mEnter the delay in seconds: \033[0m' delay
+    while true; do
+        read -p $'\033[37mEnter the delay in seconds: \033[0m' delay
+        if [[ -n "$delay" ]]; then
+            if validate_number "$delay"; then
+              break
+            fi
+        else
+         printf "\e[91mInput cannot be empty. Please enter a valid number.\e[0m\n"
+        fi
+    done
     execute_time=$((current_time + delay))
     printf "\033[92mExecuting the script after $delay seconds...\e[0m\n"
     sleep $delay
 
 elif [[ $execution_choice == "specific" ]]; then
-    read -p $'\033[37mEnter the specific time in HH:MM format: \033[0m' specific_time
+    read -p $'\033[37mEnter the specific time in HH:MM format: \033[0m\n' specific_time
     specific_time_seconds=$(date -d "$specific_time" +%s)
     
     if [[ $specific_time_seconds -gt $current_time ]]; then
