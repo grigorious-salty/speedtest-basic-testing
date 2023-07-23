@@ -4,7 +4,7 @@
 validate_number() {
     re='^[0-9]+$'
     if ! [[ $1 =~ $re ]]; then
-        printf "\e[91mInvalid input. Please enter a valid number.\e[0m"
+        printf "\e[91mInvalid input. Please enter a valid number.\e[0m\n"
         return 1
     fi
     return 0
@@ -13,9 +13,27 @@ validate_number() {
 # Function to validate if sleep time is within range
 validate_sleep_time() {
     if (( $1 < 15 || $1 > 120 )); then
-        printf "\e[91mInvalid input. Please enter a number between 15 and 120.\e[0m"
+        printf "\e[91mInvalid input. Please enter a number between 15 and 120.\e[0m\n"
         return 1
     fi
+    return 0
+}
+
+# Function to validate if the directory exists and is writable
+validate_directory() {
+    if [[ ! -d "$1" ]]; then
+        echo "Directory '$1' does not exist. Creating it..."
+        mkdir -p "$1" || {
+            echo "Failed to create the directory '$1'. Please provide a valid directory path."
+            return 1
+        }
+    fi
+
+    if [[ ! -w "$1" ]]; then
+        echo "Directory '$1' is not writable. Please provide a writable directory path."
+        return 1
+    fi
+
     return 0
 }
 
@@ -92,15 +110,29 @@ fi
 # Prompt the user to input the number of tests
 while true; do
     read -p $'\033[37mEnter the number of tests: \033[0m' num_tests
-    if validate_number "$num_tests"; then
-        break
+    if [[ -n "$num_tests" ]]; then
+        if validate_number "$num_tests"; then
+            break
+        fi
+    else
+        printf "\e[91mInput cannot be empty. Please enter a valid number.\e[0m\n"
     fi
 done
 
 # Prompt the user to input the sleep time between tests
 while true; do
-    read -p $'\033[37mEnter the sleep time between tests (in seconds): \033[0m' sleep_time
-    if validate_number "$sleep_time" && validate_sleep_time "$sleep_time"; then
+    read -t 10 -p $'\e[37mEnter the sleep time between tests (in seconds): \e[0m' sleep_time
+    valid_input=true
+
+    if [[ -z "$sleep_time" ]]; then
+        printf "\e[91mInput cannot be empty. Please enter a valid number between 15 and 120.\e[0m\n"
+        valid_input=false
+    elif ! validate_number "$sleep_time" || ! validate_sleep_time "$sleep_time"; then
+#        printf "\e[91mInvalid input. Please enter a valid number between 15 and 120.\e[0m\n"
+        valid_input=false
+    fi
+
+    if $valid_input; then
         break
     fi
 done
@@ -113,30 +145,31 @@ minutes=$((total_duration / 60))
 seconds=$((total_duration % 60))
 
 # Print the total expected duration
-printf "\e[1mTotal expected duration: $minutes minutes $seconds seconds \e[0m"
+printf "\033[92mTotal expected duration: $minutes minutes $seconds seconds \e[0m\n"
 
-# Initialize the output directory with a dummy value
-output_directory="dummy"
+# Initialize the output directory with a default value
+default_output_directory="$(pwd)/results"
+output_directory="$default_output_directory"
 
 # Prompt the user to input the custom output directory
-read -p $'\033[37mEnter the custom output directory path (default: new directory): \033[0m' output_directory
+read -p $'\033[37mEnter the custom output directory path (default: new directory): \033[0m' user_input
 
-# Check if the output directory is still the initial dummy value
-if [[ "$output_directory" == "dummy" ]]; then
-    # Set the output directory to a new directory named "results"
-    output_directory="$(pwd)/results"
-    echo "Current directory: $(pwd)"
-    # Create the "results" directory if it doesn't exist
-    if [ ! -d "$output_directory" ]; then
-        mkdir -p "$output_directory"
-        
-    fi
-    chmod 777 "$output_directory"
-    echo "Using output directory: $output_directory"
+# Check if the user gave custom directory
+if [[ ! -z "$user_input" ]]; then
+   # Use the custom output directory if provided
+    output_directory="$user_input"
 fi
 
-# Use the custom output directory if provided
-output_directory="${output_directory}"
+# Validate the output directory
+if ! validate_directory "$output_directory"; then
+    # Fall back to the default output directory if validation fails
+    output_directory="$default_output_directory"
+    validate_directory "$output_directory" || {
+        echo "Default output directory '$output_directory' is not writable. Exiting."
+        exit 1
+    }
+fi
+echo "Using output directory: $output_directory"
 
 # Initialize variables to store the total download and upload speeds
 total_download=0
