@@ -125,7 +125,7 @@ read -p $'\033[37mEnter the custom output directory path (default: new directory
 if [[ "$output_directory" == "dummy" ]]; then
     # Set the output directory to a new directory named "results"
     output_directory="$(pwd)/results"
-
+    echo "Current directory: $(pwd)"
     # Create the "results" directory if it doesn't exist
     if [ ! -d "$output_directory" ]; then
         mkdir -p "$output_directory"
