@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#############################################################################
+########################## START OF FUNTION SECTION #########################
+
 # Function to validate if input is a number
 validate_number() {
     re='^[0-9]+$'
@@ -36,19 +39,24 @@ validate_directory() {
 
     return 0
 }
+#############################################################################
+####################### START OF VARIABLES SECTION ##########################
 
+current_time=$(date +%s)
+timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+
+# Initialize variables to store the total download and upload speeds
 total_download=0
 total_upload=0
+
+#############################################################################
+##################### SPEEDTEST-CLI CHECK SECTION ###########################
+
 
 # Check if speedtest-cli is installed
 if ! command -v speedtest-cli &> /dev/null; then
     echo "speedtest-cli is not installed. Installing..."
     
-#    # Use sudo once to acquire necessary privileges for package manager commands
-#    if ! sudo true; then
-#        echo "ERROR: Unable to get superuser privileges. Please install speedtest-cli manually with appropriate permissions."
-#        exit 1
-#    fi
     # Install speedtest-cli
     if command -v apt-get &> /dev/null; then
         if ! sudo apt-get install speedtest-cli; then
@@ -73,7 +81,8 @@ if ! command -v speedtest-cli &> /dev/null; then
     printf "\e[92mspeedtest-cli has been installed successfully.\e[0m\n"
 fi
 
-current_time=$(date +%s)
+#############################################################################
+############################## TIME OF EXECUTION ############################
 
 read -p $'\033[37mWhen do you want to execute the script? [Now/Delay/Specific]: \033[0m' execution_choice
 execution_choice=$(echo "$execution_choice" | tr '[:upper:]' '[:lower:]')
@@ -114,6 +123,9 @@ else
     printf "\033[31mInvalid choice. Exiting.\e[0m\n"
     exit 1
 fi
+
+#############################################################################
+########################## NUM OF TEST AND SLEEP ############################
 
 
 # Prompt the user to input the number of tests
@@ -156,6 +168,9 @@ seconds=$((total_duration % 60))
 # Print the total expected duration
 printf "\033[92mTotal expected duration: $minutes minutes $seconds seconds \e[0m\n"
 
+#############################################################################
+############################## DIRECTORY INIT ###############################
+
 # Initialize the output directory with a default value
 default_output_directory="$(pwd)/results"
 output_directory="$default_output_directory"
@@ -180,9 +195,8 @@ if ! validate_directory "$output_directory"; then
 fi
 echo "Using output directory: $output_directory"
 
-# Initialize variables to store the total download and upload speeds
-total_download=0
-total_upload=0
+#############################################################################
+######################### CALCULATION OF RESULTS ############################
 
 # Create a timestamp for the CSV filename
 timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
@@ -229,7 +243,6 @@ for i in $(seq 1 $num_tests); do
     fi
 
     # Extract the download and upload speeds from the output
-    #download=$(echo $output | grep Download | awk '{print $2}')
     download=$(echo "$output" | awk '/Download:/ {print $2}' )
     upload=$(echo "$output" | awk '/Upload:/ {print $2}' )
 
