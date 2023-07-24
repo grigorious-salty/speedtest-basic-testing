@@ -16,6 +16,7 @@ GREEN="\033[32m"
 CYAN="\033[36m"
 COLOR_RESET="\033[0m"
 
+#common print output
 no_number_input="${RED}Invalid input. Please enter a valid number.${COLOR_RESET}\n"
 failed_cli_install="${RED}ERROR: Failed to install speedtest-cli. Please install it manually.${COLOR_RESET}\n"
 invalid_sleep_time="${RED}Invalid input. Please enter a number between 15 and 120.${COLOR_RESET}\n"
@@ -67,7 +68,7 @@ install_homebrew() {
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 }
 
-# Function to print a message inside a box-like format
+# Functions to print the results inside a box-like format
 print_boxed_message() {
     local message="$1"
     local line="------------------------------------------------------------"
@@ -266,6 +267,7 @@ if ! validate_directory "$output_directory"; then
     }
 fi
 echo "Using output directory: $output_directory"
+echo "Starting now"
 
 #############################################################################
 ######################### CALCULATION OF RESULTS ############################
@@ -335,6 +337,7 @@ average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc)
 
 #########################################################
 #################### Print the results###################
+
 # Print the final results inside a box
 echo
 print_boxed_message "Average download speed: ${CYAN}${average_download} mb/s${COLOR_RESET}"
