@@ -73,6 +73,13 @@ print_boxed_message() {
     local line="------------------------------------------------------------"
     echo "+$line+"
     echo "|${GREEN}${message}${COLOR_RESET}|"
+}
+
+print_boxed_message_under() {
+    local message="$1"
+    local line="------------------------------------------------------------"
+    echo "+$line+"
+    echo "|${GREEN}${message}${COLOR_RESET}|"
     echo "+$line+"
 }
 
@@ -114,7 +121,8 @@ if ! command -v speedtest-cli &> /dev/null; then
             echo "Homebrew is required to install speedtest-cli on macOS."
 
             # Prompt the user if they want to install Homebrew
-            read -p "Do you want to install Homebrew? [y/n]: " choice
+            printf "${CYAN}Do you want to install Homebrew? [y/n]:${COLOR_RESET}\n "
+            read -r choice
             if [[ $choice =~ ^[Yy]$ ]]; then
                 install_homebrew
                 if ! command -v brew &> /dev/null; then
@@ -143,7 +151,8 @@ fi
 #############################################################################
 ############################## TIME OF EXECUTION ############################
 
-read -p "${CYAN}When do you want to execute the script? [Now/Delay/Specific]: ${COLOR_RESET}" execution_choice
+printf "${CYAN}When do you want to execute the script? [Now/Delay/Specific]: ${COLOR_RESET}"
+read -r execution_choice
 execution_choice=$(echo "$execution_choice" | tr '[:upper:]' '[:lower:]')
 
 if [[ $execution_choice == "now" ]]; then
@@ -152,7 +161,8 @@ if [[ $execution_choice == "now" ]]; then
 
 elif [[ $execution_choice == "delay" ]]; then
     while true; do
-        read -p "${CYAN}Enter the delay in seconds: ${COLOR_RESET}" delay
+        printf "${CYAN}Enter the delay in seconds: ${COLOR_RESET}"
+        read -r delay
         if [[ -n "$delay" ]]; then
             if validate_number "$delay"; then
               break
@@ -166,7 +176,8 @@ elif [[ $execution_choice == "delay" ]]; then
     sleep $delay
 
 elif [[ $execution_choice == "specific" ]]; then
-    read -p "${CYAN}Enter the specific time in HH:MM format: ${COLOR_RESET}" specific_time
+    printf "${CYAN}Enter the specific time in HH:MM format: ${COLOR_RESET}"
+    read -r specific_time
     specific_time_seconds=$(date -d "$specific_time" +%s)
     
     if [[ $specific_time_seconds -gt $current_time ]]; then
@@ -189,7 +200,8 @@ fi
 
 # Prompt the user to input the number of tests
 while true; do
-    read -p "${CYAN}Enter the number of tests: ${COLOR_RESET}" num_tests
+    printf "${CYAN}Enter the number of tests: ${COLOR_RESET}"
+    read -r num_tests
     if [[ -n "$num_tests" ]]; then
         if validate_number "$num_tests"; then
             break
@@ -201,7 +213,8 @@ done
 
 # Prompt the user to input the sleep time between tests
 while true; do
-    read -p "${CYAN}Enter the sleep time between tests (in seconds): ${COLOR_RESET}\n" sleep_time
+    printf "${CYAN}Enter the sleep time between tests (in seconds): ${COLOR_RESET}\n"
+    read -r sleep_time
     valid_input=true
 
     if [[ -z "$sleep_time" ]]; then
@@ -234,7 +247,8 @@ default_output_directory="$(pwd)/results"
 output_directory="$default_output_directory"
 
 # Prompt the user to input the custom output directory
-read -p "${CYAN}Enter the custom output directory path (default: new directory): ${COLOR_RESET}" user_input
+printf "${CYAN}Enter the custom output directory path (default: new directory): ${COLOR_RESET}"
+read -r user_input
 
 # Check if the user gave custom directory
 if [[ ! -z "$user_input" ]]; then
@@ -326,4 +340,4 @@ echo
 print_boxed_message "Average download speed: ${CYAN}${average_download} mb/s${COLOR_RESET}"
 print_boxed_message "Average upload speed: ${CYAN}${average_upload} mb/s${COLOR_RESET}"
 print_boxed_message "Results appended to: ${CYAN}${results_filename}${COLOR_RESET}"
-print_boxed_message "Error logs appended to: ${CYAN}${errors_filename}${COLOR_RESET}"
+print_boxed_message_under "Error logs appended to: ${CYAN}${errors_filename}${COLOR_RESET}"
