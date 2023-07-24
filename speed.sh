@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #############################################################################
-####################### START OF VARIABLES SECTION ##########################
+####################    START OF VARIABLES SECTION     ######################
+#############################################################################
 
 current_time=$(date +%s)
 timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
@@ -24,7 +25,8 @@ empty_user_input="${RED}Input cannot be empty. Please enter a valid number.${COL
 STRING_5="CONNECTED LINK SPEED: "
 
 #############################################################################
-########################## START OF FUNTION SECTION #########################
+#######################    START OF FUNTION SECTION    ######################
+#############################################################################
 
 # Function to validate if input is a number
 validate_number() {
@@ -38,7 +40,7 @@ validate_number() {
 
 # Function to validate if sleep time is within range
 validate_sleep_time() {
-    if (( $1 < 15 || $1 > 120 )); then
+    if (( $1 < 1 || $1 > 120 )); then
         printf "$invalid_sleep_time"
         return 1
     fi
@@ -68,6 +70,28 @@ install_homebrew() {
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 }
 
+# Function to display a progress bar
+print_progress_bar() {
+    local progress=$1
+    local bar_length=50
+    local num_chars=$((progress * bar_length / 100))
+
+    printf "\r["
+    for ((i = 0; i < num_chars; i++)); do
+        printf "="
+    done
+    for ((i = num_chars; i < bar_length; i++)); do
+        printf " "
+    done
+    printf "] %d%%" $progress
+
+    if ((progress == 100)); then
+        printf "\n" # Print a newline to avoid overlapping with the next line
+    else
+        printf "\033[K" # Clear the line to display the updated progress bar
+    fi
+}
+
 # Functions to print the results inside a box-like format
 print_boxed_message() {
     local message="$1"
@@ -85,8 +109,8 @@ print_boxed_message_under() {
 }
 
 #############################################################################
-##################### SPEEDTEST-CLI CHECK SECTION ###########################
-
+##################    SPEEDTEST-CLI CHECK SECTION    ########################
+#############################################################################
 
     # Check if speedtest-cli is installed
 if ! command -v speedtest-cli &> /dev/null; then
@@ -150,7 +174,8 @@ if ! command -v speedtest-cli &> /dev/null; then
 fi
 
 #############################################################################
-############################## TIME OF EXECUTION ############################
+############################   TIME OF EXECUTION    #########################
+#############################################################################
 
 printf "${CYAN}When do you want to execute the script? [Now/Delay/Specific]: ${COLOR_RESET}"
 read -r execution_choice
@@ -196,8 +221,8 @@ else
 fi
 
 #############################################################################
-########################## NUM OF TEST AND SLEEP ############################
-
+########################   NUM OF TEST AND SLEEP   ##########################
+#############################################################################
 
 # Prompt the user to input the number of tests
 while true; do
@@ -214,7 +239,7 @@ done
 
 # Prompt the user to input the sleep time between tests
 while true; do
-    printf "${CYAN}Enter the sleep time between tests (in seconds): ${COLOR_RESET}\n"
+    printf "${CYAN}Enter the sleep time between tests (in seconds): ${COLOR_RESET}"
     read -r sleep_time
     valid_input=true
 
@@ -241,7 +266,8 @@ seconds=$((total_duration % 60))
 printf "${GREEN}Total expected duration: $minutes minutes $seconds seconds ${COLOR_RESET}\n"
 
 #############################################################################
-############################## DIRECTORY INIT ###############################
+######################   DIRECTORY AND FILE CHECK   #########################
+#############################################################################
 
 # Initialize the output directory with a default value
 default_output_directory="$(pwd)/results"
@@ -266,14 +292,8 @@ if ! validate_directory "$output_directory"; then
         exit 1
     }
 fi
-echo "Using output directory: $output_directory"
-echo "Starting now"
-
-#############################################################################
-######################### CALCULATION OF RESULTS ############################
-
-# Create a timestamp for the CSV filename
-timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
+ 
+# MAKE CSV
 results_filename="$output_directory/speedtest_results.csv"
 errors_filename="$output_directory/speedtest_errors.csv"
 
@@ -288,6 +308,13 @@ if [ ! -f "$errors_filename" ]; then
     # Initialize the errors CSV file with column headers
     echo "Error, Timestamp, Note" > "$errors_filename"
 fi
+
+echo "Using output directory: $output_directory"
+echo "Starting now"
+
+#############################################################################
+#######################   CALCULATION OF RESULTS   ##########################
+#############################################################################
 
 # Loop for the specified number of tests
 for i in $(seq 1 $num_tests); do
@@ -309,34 +336,44 @@ for i in $(seq 1 $num_tests); do
         else
             note="Ping to Google nameservers failed"
         fi
-        
+
         echo "$error_message, $error_timestamp, $note" >> "$errors_filename"
+
+        #print the error message to the console when it happens
+        echo
         printf "${RED}Error: $error_message at $error_timestamp ($note)${COLOR_RESET}\n"
-        
-        continue
+    else
+        # Extract the download and upload speeds from the output
+        download=$(echo "$output" | awk '/Download:/ {print $2}')
+        upload=$(echo "$output" | awk '/Upload:/ {print $2}')
+
+        # Add the current download and upload speeds to the total
+        total_download=$(echo "$total_download + $download" | bc -l)
+        total_upload=$(echo "$total_upload + $upload" | bc -l)
+
+        # Sleep for the specified time before running the next test
+        sleep $sleep_time
+
+        # Append the results to the results CSV file
+        echo "$download, $upload, $(date +"%Y-%m-%d %H:%M:%S")" >> "$results_filename"
     fi
 
-    # Extract the download and upload speeds from the output
-    download=$(echo "$output" | awk '/Download:/ {print $2}' )
-    upload=$(echo "$output" | awk '/Upload:/ {print $2}' )
-
-    # Add the current download and upload speeds to the total
-    total_download=$(echo "$total_download + $download" | bc -l)
-    total_upload=$(echo "$total_upload + $upload" | bc -l)
-
-    # Sleep for the specified time before running the next test
-    sleep $sleep_time
-
-    # Append the results to the results CSV file
-    echo "$download, $upload, $(date +"%Y-%m-%d %H:%M:%S")" >> "$results_filename"
+    # Calculate the current progress and update the progress bar
+    current_progress=$((i * 100 / num_tests))
+    print_progress_bar $current_progress
 done
+
+# After all tests are finished, print the completion of the progress bar
+current_progress=100
+print_progress_bar $current_progress
 
 # Calculate the average download and upload speeds
 average_download=$(echo "scale=2; $total_download / $num_tests" | bc) 
 average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc) 
 
-#########################################################
-#################### Print the results###################
+#############################################################################
+##########################    PRINT THE RESULTS   ###########################
+#############################################################################
 
 # Print the final results inside a box
 echo
