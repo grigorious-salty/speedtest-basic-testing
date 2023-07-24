@@ -16,10 +16,10 @@ GREEN="\033[32m"
 CYAN="\033[36m"
 COLOR_RESET="\033[0m"
 
-no_number_input="${RED}Invalid input. Please enter a valid number.${COLOR_RESET}"
+no_number_input="${RED}Invalid input. Please enter a valid number.${COLOR_RESET}\n"
 failed_cli_install="${RED}ERROR: Failed to install speedtest-cli. Please install it manually.${COLOR_RESET}\n"
-STRING_3="TOTAL DOWNTIME:"
-STRING_4="RECONNECTED LINK SPEED:"
+invalid_sleep_time="${RED}Invalid input. Please enter a number between 15 and 120.${COLOR_RESET}\n"
+empty_user_input="${RED}Input cannot be empty. Please enter a valid number.${COLOR_RESET}\n"
 STRING_5="CONNECTED LINK SPEED: "
 
 #############################################################################
@@ -29,7 +29,7 @@ STRING_5="CONNECTED LINK SPEED: "
 validate_number() {
     re='^[0-9]+$'
     if ! [[ $1 =~ $re ]]; then
-        printf "$no_number_input\n"
+        printf "$no_number_input"
         return 1
     fi
     return 0
@@ -38,7 +38,7 @@ validate_number() {
 # Function to validate if sleep time is within range
 validate_sleep_time() {
     if (( $1 < 15 || $1 > 120 )); then
-        printf "${RED}Invalid input. Please enter a number between 15 and 120.${COLOR_RESET}\n"
+        printf "$invalid_sleep_time"
         return 1
     fi
     return 0
@@ -65,6 +65,15 @@ validate_directory() {
 # Function to install Homebrew on macOS
 install_homebrew() {
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+}
+
+# Function to print a message inside a box-like format
+print_boxed_message() {
+    local message="$1"
+    local line="------------------------------------------------------------"
+    echo "+$line+"
+    echo "|${GREEN}${message}${COLOR_RESET}|"
+    echo "+$line+"
 }
 
 #############################################################################
@@ -149,7 +158,7 @@ elif [[ $execution_choice == "delay" ]]; then
               break
             fi
         else
-         printf "${RED}Input cannot be empty. Please enter a valid number.${COLOR_RESET}\n"
+         printf "$empty_user_input"
         fi
     done
     execute_time=$((current_time + delay))
@@ -186,7 +195,7 @@ while true; do
             break
         fi
     else
-        printf "${RED}Input cannot be empty. Please enter a valid number.${COLOR_RESET}\n"
+        printf "$empty_user_input"
     fi
 done
 
@@ -196,7 +205,7 @@ while true; do
     valid_input=true
 
     if [[ -z "$sleep_time" ]]; then
-        printf "${RED}Input cannot be empty. Please enter a valid number between 15 and 120.${COLOR_RESET}\n"
+        printf "$invalid_sleep_time"
         valid_input=false
     elif ! validate_number "$sleep_time" || ! validate_sleep_time "$sleep_time"; then
         valid_input=false
@@ -310,10 +319,11 @@ done
 average_download=$(echo "scale=2; $total_download / $num_tests" | bc) 
 average_upload=$(echo "scale=2; $total_upload / $num_tests" | bc) 
 
-
-# Print the results
+#########################################################
+#################### Print the results###################
+# Print the final results inside a box
 echo
-printf "${GREEN}Average download speed:${COLOR_RESET} ${CYAN}$average_download mb/s${COLOR_RESET}\n"
-printf "${GREEN}Average upload speed:${COLOR_RESET} ${CYAN}$average_upload mb/s${COLOR_RESET}\n"
-printf "${GREEN}Results appended to:${COLOR_RESET} ${CYAN}$results_filename${COLOR_RESET}\n"
-printf "${GREEN}Error logs appended to:${COLOR_RESET} ${CYAN}$errors_filename${COLOR_RESET}\n"
+print_boxed_message "Average download speed: ${CYAN}${average_download} mb/s${COLOR_RESET}"
+print_boxed_message "Average upload speed: ${CYAN}${average_upload} mb/s${COLOR_RESET}"
+print_boxed_message "Results appended to: ${CYAN}${results_filename}${COLOR_RESET}"
+print_boxed_message "Error logs appended to: ${CYAN}${errors_filename}${COLOR_RESET}"
